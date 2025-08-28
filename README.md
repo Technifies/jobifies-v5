@@ -2,6 +2,12 @@
 
 A comprehensive job portal platform built with modern web technologies.
 
+## 🚀 One-Click Deployment
+
+[![Deploy Backend to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Technifies/jobifies-v5)
+
+[![Deploy Frontend to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Technifies/jobifies-v5&stack=react)
+
 ## 🚀 Project Overview
 
 Jobifies is a full-featured job portal that connects job seekers with employers and recruiters. It includes advanced features like AI-powered matching, resume parsing, and comprehensive analytics.

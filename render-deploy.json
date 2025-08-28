@@ -1,0 +1,47 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "jobifies-backend",
+      "env": "node",
+      "buildCommand": "npm install && npm run build",
+      "startCommand": "npm start",
+      "rootDir": "./backend",
+      "plan": "starter",
+      "envVars": [
+        {
+          "key": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "key": "PORT",
+          "value": "10000"
+        },
+        {
+          "key": "JWT_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "BCRYPT_ROUNDS",
+          "value": "12"
+        },
+        {
+          "key": "CORS_ORIGIN",
+          "value": "https://jobifies-portal.netlify.app"
+        }
+      ]
+    }
+  ],
+  "databases": [
+    {
+      "name": "jobifies-postgres",
+      "databaseName": "jobifies",
+      "user": "jobifies",
+      "plan": "starter"
+    }
+  ]
+}
