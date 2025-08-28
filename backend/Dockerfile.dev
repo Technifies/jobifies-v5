@@ -1,0 +1,41 @@
+# Development Dockerfile for Backend
+FROM node:18-alpine AS development
+
+# Install development dependencies
+RUN apk add --no-cache \
+    curl \
+    bash \
+    git
+
+# Set working directory
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# Copy package files
+COPY package*.json ./
+COPY tsconfig.json ./
+
+# Install all dependencies (including dev dependencies)
+RUN npm ci
+
+# Copy source code
+COPY src ./src
+COPY tests ./tests
+
+# Create necessary directories
+RUN mkdir -p logs uploads dist && chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose ports
+EXPOSE 5000 9229
+
+# Development command with hot reload and debugging
+CMD ["npm", "run", "dev"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:5000/api/v1/health || exit 1

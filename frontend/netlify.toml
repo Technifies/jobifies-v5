@@ -1,0 +1,239 @@
+[build]
+  # Build command with optimizations
+  command = "npm run build"
+  
+  # Output directory
+  publish = ".next"
+  
+  # Node version and build environment
+  environment = { 
+    NODE_VERSION = "18",
+    NPM_FLAGS = "--prefer-offline --no-audit --progress=false",
+    NEXT_TELEMETRY_DISABLED = "1",
+    GENERATE_SOURCEMAP = "false"
+  }
+
+  # Processing settings for better performance
+  [build.processing]
+    skip_processing = false
+  [build.processing.css]
+    bundle = true
+    minify = true
+  [build.processing.js]
+    bundle = true
+    minify = true
+  [build.processing.html]
+    pretty_urls = true
+  [build.processing.images]
+    compress = true
+
+# Production context
+[context.production]
+  command = "npm run build"
+
+# Deploy preview context
+[context.deploy-preview]
+  command = "npm run build"
+
+# Branch deploy context (for feature branches)
+[context.branch-deploy]
+  command = "npm run build"
+
+# Security headers for all routes
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Security headers
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(self), payment=(self)"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://api.jobifies.com https://api-staging.jobifies.com https://vitals.vercel-insights.com; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
+    
+    # Performance headers
+    X-DNS-Prefetch-Control = "on"
+    X-Robots-Tag = "index, follow"
+    
+    # Custom headers
+    X-Powered-By = "Jobifies"
+    X-Version = "1.0.0"
+
+# Headers for static assets
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Headers for images
+[[headers]]
+  for = "*.jpg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.png"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.webp"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Headers for fonts
+[[headers]]
+  for = "*.woff"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Headers for CSS and JS
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# Redirects for SPA behavior
+[[redirects]]
+  from = "/jobs/*"
+  to = "/jobs/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/companies/*"
+  to = "/companies/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard/*"
+  to = "/dashboard/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/profile/*"
+  to = "/profile/index.html"
+  status = 200
+
+# Catch-all redirect for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API proxy (if needed for development)
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.jobifies.com/api/:splat"
+  status = 200
+  force = true
+
+# Environment variables for different contexts
+[context.production.environment]
+  NEXT_PUBLIC_ENV = "production"
+  NEXT_PUBLIC_API_URL = "https://api.jobifies.com"
+  NEXT_PUBLIC_APP_URL = "https://jobifies.com"
+
+[context.deploy-preview.environment]
+  NEXT_PUBLIC_ENV = "preview"
+  NEXT_PUBLIC_API_URL = "https://api-staging.jobifies.com"
+  NEXT_PUBLIC_APP_URL = "https://deploy-preview--jobifies.netlify.app"
+
+[context.branch-deploy.environment]
+  NEXT_PUBLIC_ENV = "development"
+  NEXT_PUBLIC_API_URL = "https://api-staging.jobifies.com"
+
+# Functions (for serverless functions if needed)
+[functions]
+  directory = "netlify/functions"
+
+# Edge functions for advanced functionality
+[[edge_functions]]
+  function = "geo-redirect"
+  path = "/api/geo/*"
+
+[[edge_functions]]
+  function = "ab-test"
+  path = "/jobs/*"
+
+# Form handling
+[forms]
+  contact = "/contact"
+  newsletter = "/newsletter"
+  job-alert = "/job-alerts"
+
+# Build plugins
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+  
+  [plugins.inputs.thresholds]
+    performance = 0.9
+    accessibility = 0.9
+    best-practices = 0.9
+    seo = 0.9
+    pwa = 0.9
+
+[[plugins]]
+  package = "netlify-plugin-submit-sitemap"
+  
+  [plugins.inputs]
+    baseUrl = "https://jobifies.com"
+    sitemapPath = "/sitemap.xml"
+    ignorePeriod = 0
+    providers = [
+      "google",
+      "bing",
+      "yandex"
+    ]
+
+[[plugins]]
+  package = "netlify-plugin-minify-html"
+  
+  [plugins.inputs]
+    contexts = [
+      "production",
+      "deploy-preview"
+    ]
+
+[[plugins]]
+  package = "@netlify/plugin-cache-assets"
+
+[[plugins]]
+  package = "netlify-plugin-prerender-spa"
+  
+  [plugins.inputs]
+    renderDir = "out"
+    skipExtensions = ["png", "jpg", "js", "css"]
+
+# Optimization settings
+[optimize]
+  bundle = true
+  minify = true
+  compress = true
+
+# Split testing
+[split_testing]
+  test_1 = { path = "/jobs", branches = ["main", "jobs-redesign"] }
+
+# Large Media configuration
+[lfs]
+  ignore = [
+    "*.mp4",
+    "*.mov",
+    "*.avi"
+  ]

@@ -1,0 +1,293 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: jobifies_postgres
+    environment:
+      POSTGRES_DB: jobifies_dev
+      POSTGRES_USER: jobifies
+      POSTGRES_PASSWORD: jobifies123
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=en_US.UTF-8
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/database/seeds:/docker-entrypoint-initdb.d/seeds
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jobifies -d jobifies_dev']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: jobifies_redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: jobifies_backend
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      API_VERSION: v1
+      
+      # Database
+      DATABASE_URL: postgresql://jobifies:jobifies123@postgres:5432/jobifies_dev
+      DB_POOL_MIN: 2
+      DB_POOL_MAX: 10
+      
+      # Redis
+      REDIS_URL: redis://redis:6379
+      REDIS_TTL: 3600
+      
+      # JWT
+      JWT_SECRET: dev-jwt-secret-key-change-in-production
+      JWT_EXPIRES_IN: 24h
+      
+      # Session
+      SESSION_SECRET: dev-session-secret-change-in-production
+      SESSION_MAX_AGE: 86400000
+      
+      # CORS
+      CORS_ORIGIN: http://localhost:3000
+      
+      # Email (for development - use MailHog)
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      SMTP_USER: ''
+      SMTP_PASS: ''
+      
+      # File uploads
+      MAX_FILE_SIZE: 5242880
+      UPLOAD_PATH: /app/uploads
+      
+      # Rate limiting
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 1000
+    ports:
+      - '5000:5000'
+      - '9229:9229' # Debug port
+    volumes:
+      - ./backend/src:/app/src:ro
+      - ./backend/uploads:/app/uploads
+      - backend_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/api/v1/health']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./backend/src
+          target: /app/src
+
+  # Frontend Next.js App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      target: development
+    container_name: jobifies_frontend
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      
+      # API Configuration
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_ENV: development
+      
+      # Auth
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: dev-nextauth-secret-change-in-production
+      
+      # Analytics (disabled in dev)
+      NEXT_PUBLIC_GA_ID: ''
+      NEXT_TELEMETRY_DISABLED: 1
+      
+      # Development settings
+      FAST_REFRESH: true
+      GENERATE_SOURCEMAP: true
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: jobifies_mailhog
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # Web UI
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: jobifies_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@jobifies.dev
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - '8080:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./docker/pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Redis Insight for Redis management
+  redis-insight:
+    image: redislabs/redisinsight:latest
+    container_name: jobifies_redis_insight
+    ports:
+      - '8001:8001'
+    volumes:
+      - redis_insight_data:/db
+    depends_on:
+      - redis
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Nginx reverse proxy for local development
+  nginx:
+    image: nginx:alpine
+    container_name: jobifies_nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./docker/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Monitoring with Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: jobifies_prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: jobifies_grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_USERS_ALLOW_SIGN_UP: false
+    ports:
+      - '3001:3000'
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./docker/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+    depends_on:
+      - prometheus
+    networks:
+      - jobifies_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  backend_node_modules:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  frontend_next:
+    driver: local
+
+networks:
+  jobifies_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

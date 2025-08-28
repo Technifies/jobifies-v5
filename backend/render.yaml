@@ -1,0 +1,34 @@
+services:
+  # Main web service
+  - type: web
+    name: jobifies-backend
+    env: node
+    region: oregon # or closest to your users
+    plan: starter # simplified for initial deployment
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jobifies-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: CORS_ORIGIN
+        value: https://jobifies-portal.netlify.app
+# Database
+databases:
+  - name: jobifies-postgres
+    databaseName: jobifies
+    user: jobifies

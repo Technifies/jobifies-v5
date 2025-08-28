@@ -1,0 +1,384 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop, staging]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Detect changes to optimize CI/CD runs
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+      shared: ${{ steps.changes.outputs.shared }}
+      dependencies: ${{ steps.changes.outputs.dependencies }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - 'shared/**'
+              - '.github/workflows/**'
+            backend:
+              - 'backend/**'
+              - 'shared/**'
+              - '.github/workflows/**'
+            shared:
+              - 'shared/**'
+            dependencies:
+              - 'package*.json'
+              - 'frontend/package*.json'
+              - 'backend/package*.json'
+
+  # Security scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript, typescript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Frontend CI/CD
+  frontend:
+    needs: [changes, security-scan]
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.dependencies == 'true'
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        exclude:
+          - environment: production
+            if: github.ref != 'refs/heads/main'
+          - environment: staging
+            if: github.ref != 'refs/heads/staging'
+
+    environment: ${{ matrix.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd frontend && npm ci
+
+      - name: Type checking
+        run: |
+          cd frontend && npm run type-check
+
+      - name: Lint code
+        run: |
+          cd frontend && npm run lint
+
+      - name: Run tests
+        run: |
+          cd frontend && npm run test -- --coverage --watchAll=false
+        env:
+          CI: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+
+      - name: Build application
+        run: |
+          cd frontend && npm run build
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_ENV: ${{ matrix.environment }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+
+      - name: Bundle analysis
+        if: matrix.environment == 'production'
+        run: |
+          cd frontend && npm run analyze
+
+      - name: Lighthouse CI
+        if: matrix.environment == 'production'
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './frontend/.lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Deploy to Netlify
+        if: github.event_name == 'push'
+        uses: nwtgck/actions-netlify@v3.0
+        with:
+          publish-dir: './frontend/out'
+          production-branch: ${{ matrix.environment == 'production' && 'main' || matrix.environment == 'staging' && 'staging' || 'develop' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions - ${{ github.sha }}"
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ matrix.environment == 'production' && secrets.NETLIFY_SITE_ID_PROD || matrix.environment == 'staging' && secrets.NETLIFY_SITE_ID_STAGING || secrets.NETLIFY_SITE_ID_DEV }}
+
+  # Backend CI/CD
+  backend:
+    needs: [changes, security-scan]
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.dependencies == 'true'
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+        exclude:
+          - environment: production
+            if: github.ref != 'refs/heads/main'
+          - environment: staging
+            if: github.ref != 'refs/heads/staging'
+
+    environment: ${{ matrix.environment }}
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: jobifies_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd backend && npm ci
+
+      - name: Type checking
+        run: |
+          cd backend && npm run type-check
+
+      - name: Lint code
+        run: |
+          cd backend && npm run lint
+
+      - name: Run database migrations
+        run: |
+          cd backend && npm run migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobifies_test
+          NODE_ENV: test
+
+      - name: Run tests
+        run: |
+          cd backend && npm run test:coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/jobifies_test
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+          JWT_SECRET: test-secret
+          SESSION_SECRET: test-session-secret
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+      - name: Build application
+        run: |
+          cd backend && npm run build
+
+      - name: Build Docker image
+        if: github.event_name == 'push'
+        run: |
+          cd backend
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} .
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ matrix.environment }}
+
+      - name: Log in to Container Registry
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        if: github.event_name == 'push'
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ matrix.environment }}
+
+      - name: Deploy to Render
+        if: github.event_name == 'push'
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": false}' \
+            "https://api.render.com/v1/services/${{ matrix.environment == 'production' && secrets.RENDER_SERVICE_ID_PROD || matrix.environment == 'staging' && secrets.RENDER_SERVICE_ID_STAGING || secrets.RENDER_SERVICE_ID_DEV }}/deploys"
+
+  # Integration tests
+  integration-tests:
+    needs: [frontend, backend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run E2E tests
+        run: |
+          npm run test:e2e
+        env:
+          FRONTEND_URL: ${{ secrets.STAGING_FRONTEND_URL }}
+          BACKEND_URL: ${{ secrets.STAGING_BACKEND_URL }}
+
+  # Performance tests
+  performance-tests:
+    needs: [integration-tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Artillery Load Test
+        run: |
+          npx artillery run --target ${{ secrets.PRODUCTION_BACKEND_URL }} ./tests/load/artillery.yml
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: ./performance-results/
+
+  # Cleanup and notifications
+  cleanup:
+    needs: [frontend, backend, integration-tests, performance-tests]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clean up Docker images
+        run: |
+          docker system prune -f
+
+      - name: Notify Slack on success
+        if: success() && github.event_name == 'push'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          message: |
+            :white_check_mark: *Deployment Successful* 
+            *Repository:* ${{ github.repository }}
+            *Branch:* ${{ github.ref_name }}
+            *Commit:* ${{ github.sha }}
+            *Author:* ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on failure
+        if: failure() && github.event_name == 'push'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          message: |
+            :x: *Deployment Failed*
+            *Repository:* ${{ github.repository }}
+            *Branch:* ${{ github.ref_name }}
+            *Commit:* ${{ github.sha }}
+            *Author:* ${{ github.actor }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

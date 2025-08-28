@@ -1,0 +1,322 @@
+# Artillery.js Load Testing Configuration for Jobifies
+# Tests various scenarios to ensure the application can handle 10,000+ concurrent users
+
+config:
+  target: 'https://api.jobifies.com'
+  http:
+    timeout: 30
+    pool: 10
+    maxSockets: 50
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Gradual ramp-up
+    - duration: 300
+      arrivalRate: 5
+      rampTo: 50
+      name: "Gradual ramp-up"
+    
+    # Sustained load
+    - duration: 600
+      arrivalRate: 50
+      name: "Sustained load"
+    
+    # Peak load simulation
+    - duration: 300
+      arrivalRate: 50
+      rampTo: 200
+      name: "Peak load"
+    
+    # Stress testing
+    - duration: 180
+      arrivalRate: 200
+      rampTo: 500
+      name: "Stress test"
+    
+    # Cool down
+    - duration: 120
+      arrivalRate: 500
+      rampTo: 10
+      name: "Cool down"
+
+  payload:
+    # Test data for realistic scenarios
+    - path: './test-data/users.csv'
+      fields:
+        - 'email'
+        - 'password'
+        - 'name'
+        - 'skills'
+    
+    - path: './test-data/jobs.csv'
+      fields:
+        - 'title'
+        - 'company'
+        - 'location'
+        - 'salary'
+        - 'type'
+
+  variables:
+    api_version: 'v1'
+    test_run_id: '{{ $timestamp }}'
+
+scenarios:
+  # Public API endpoints (no authentication)
+  - name: "Public browsing"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/{{ api_version }}/health"
+          expect:
+            - statusCode: 200
+            - hasHeader: "x-response-time"
+      
+      - get:
+          url: "/api/{{ api_version }}/jobs"
+          qs:
+            page: "{{ $randomInt(1, 10) }}"
+            limit: "{{ $randomInt(10, 50) }}"
+            location: "{{ $pick(['New York', 'San Francisco', 'London', 'Toronto', 'Berlin']) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: "data"
+          capture:
+            - json: "$.data[0].id"
+              as: "job_id"
+      
+      - get:
+          url: "/api/{{ api_version }}/jobs/{{ job_id }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      - get:
+          url: "/api/{{ api_version }}/companies"
+          qs:
+            page: "{{ $randomInt(1, 5) }}"
+            limit: "20"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      - think: "{{ $randomInt(2, 10) }}"
+
+  # User authentication and profile management
+  - name: "User authentication flow"
+    weight: 25
+    flow:
+      # User registration
+      - post:
+          url: "/api/{{ api_version }}/auth/register"
+          json:
+            name: "{{ name }}"
+            email: "test_{{ $randomString() }}@example.com"
+            password: "TestPassword123!"
+            confirmPassword: "TestPassword123!"
+          expect:
+            - statusCode: [201, 409] # 201 created, 409 if email exists
+          capture:
+            - json: "$.data.token"
+              as: "auth_token"
+              ifExists: true
+      
+      # User login (fallback if registration fails)
+      - post:
+          url: "/api/{{ api_version }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          expect:
+            - statusCode: [200, 401]
+          capture:
+            - json: "$.data.token"
+              as: "auth_token"
+              ifExists: true
+      
+      - think: 2
+      
+      # Access protected endpoints
+      - get:
+          url: "/api/{{ api_version }}/users/profile"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          expect:
+            - statusCode: [200, 401]
+      
+      # Update profile
+      - put:
+          url: "/api/{{ api_version }}/users/profile"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          json:
+            skills: "{{ skills }}"
+            location: "{{ $pick(['New York', 'San Francisco', 'London', 'Toronto']) }}"
+          expect:
+            - statusCode: [200, 401, 422]
+      
+      - think: "{{ $randomInt(5, 15) }}"
+
+  # Job search and application flow
+  - name: "Job search and application"
+    weight: 35
+    flow:
+      # Advanced job search
+      - get:
+          url: "/api/{{ api_version }}/jobs/search"
+          qs:
+            q: "{{ $pick(['developer', 'engineer', 'manager', 'analyst', 'designer']) }}"
+            location: "{{ $pick(['remote', 'New York', 'San Francisco', 'London']) }}"
+            salary_min: "{{ $randomInt(50000, 80000) }}"
+            job_type: "{{ $pick(['full-time', 'part-time', 'contract', 'remote']) }}"
+            experience_level: "{{ $pick(['entry', 'mid', 'senior']) }}"
+            page: "{{ $randomInt(1, 5) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: "data"
+            - hasProperty: "pagination"
+          capture:
+            - json: "$.data"
+              as: "search_results"
+      
+      # Get job details
+      - get:
+          url: "/api/{{ api_version }}/jobs/{{ $randomFromArray(search_results) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$.data.id"
+              as: "selected_job_id"
+      
+      # Check similar jobs
+      - get:
+          url: "/api/{{ api_version }}/jobs/{{ selected_job_id }}/similar"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      - think: "{{ $randomInt(10, 30) }}"
+      
+      # Apply for job (requires authentication)
+      - post:
+          url: "/api/{{ api_version }}/auth/login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            - json: "$.data.token"
+              as: "auth_token"
+              ifExists: true
+      
+      - post:
+          url: "/api/{{ api_version }}/applications"
+          headers:
+            Authorization: "Bearer {{ auth_token }}"
+          json:
+            job_id: "{{ selected_job_id }}"
+            cover_letter: "I am very interested in this position and believe my skills align well with your requirements."
+            resume_url: "https://example.com/resume.pdf"
+          expect:
+            - statusCode: [201, 400, 401, 409]
+
+  # Company browsing and reviews
+  - name: "Company exploration"
+    weight: 10
+    flow:
+      # Browse companies
+      - get:
+          url: "/api/{{ api_version }}/companies"
+          qs:
+            page: "{{ $randomInt(1, 3) }}"
+            limit: "15"
+            industry: "{{ $pick(['Technology', 'Finance', 'Healthcare', 'Education', 'Retail']) }}"
+            size: "{{ $pick(['startup', 'small', 'medium', 'large', 'enterprise']) }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+          capture:
+            - json: "$.data[0].id"
+              as: "company_id"
+      
+      # Get company details
+      - get:
+          url: "/api/{{ api_version }}/companies/{{ company_id }}"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      # Get company jobs
+      - get:
+          url: "/api/{{ api_version }}/companies/{{ company_id }}/jobs"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      # Get company reviews
+      - get:
+          url: "/api/{{ api_version }}/companies/{{ company_id }}/reviews"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      - think: "{{ $randomInt(5, 20) }}"
+
+# Performance expectations and SLA definitions
+expect:
+  # Response time thresholds
+  p95: 2000  # 95th percentile should be under 2 seconds
+  p99: 5000  # 99th percentile should be under 5 seconds
+  
+  # Error rate thresholds
+  maxErrorRate: 1  # Maximum 1% error rate
+  
+  # Specific endpoint expectations
+  '/api/v1/health':
+    p95: 100   # Health check should be very fast
+    p99: 500
+  
+  '/api/v1/jobs':
+    p95: 1500  # Job listing should be fast
+    p99: 3000
+  
+  '/api/v1/jobs/search':
+    p95: 2000  # Search can be slightly slower
+    p99: 4000
+  
+  '/api/v1/auth/login':
+    p95: 1000  # Authentication should be reasonably fast
+    p99: 2500
+
+# Custom metrics and monitoring
+metrics:
+  - name: "custom.job_search_success_rate"
+    unit: "percent"
+    
+  - name: "custom.authentication_success_rate"
+    unit: "percent"
+    
+  - name: "custom.application_submission_rate"
+    unit: "percent"
+
+# Plugins for enhanced reporting
+plugins:
+  expect: {}
+  metrics-by-endpoint: 
+    useOnlyRequestNames: true
+  hdrhistogram: {}
+  
+# Before and after hooks
+before:
+  flow:
+    - log: "Starting Jobifies load test - Target: {{ $environment.target }}"
+    - log: "Test run ID: {{ test_run_id }}"
+
+after:
+  flow:
+    - log: "Load test completed"
+    - log: "Generating performance report..."

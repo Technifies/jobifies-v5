@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp add:*)",
+      "WebFetch(domain:www.naukri.com)",
+      "Bash(git init:*)",
+      "Bash(dir:*)",
+      "Bash(npx create-next-app:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Read(/c:\\Users\\Sayyed Parvez\\Desktop\\jobifies\\screenshots/**)",
+      "Read(/c:\\Users\\Sayyed Parvez\\Desktop\\jobifies\\screenshots/**)",
+      "WebFetch(domain:localhost)",
+      "Bash(npm run build:*)",
+      "Bash(cp:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
