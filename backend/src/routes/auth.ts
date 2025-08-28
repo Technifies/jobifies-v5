@@ -5,8 +5,8 @@
  *   description: User authentication endpoints
  */
 
-import { Router, Response } from 'express';
-import { AuthenticatedRequest, UserRole } from '../types';
+import { Router, Request, Response } from 'express';
+import { UserRole } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { 
   validate,
@@ -113,7 +113,7 @@ const router = Router();
  *       500:
  *         description: Internal server error
  */
-router.post('/register', validate(registerValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/register', validate(registerValidation()), asyncHandler(async (req: Request, res: Response) => {
   const { email, password, first_name, last_name, role, phone_number } = req.body;
 
   const result = await authService.register({
@@ -165,7 +165,7 @@ router.post('/register', validate(registerValidation()), asyncHandler(async (req
  *       400:
  *         description: Validation error
  */
-router.post('/login', validate(loginValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/login', validate(loginValidation()), asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   const result = await authService.login(email, password);
@@ -209,7 +209,7 @@ router.post('/login', validate(loginValidation()), asyncHandler(async (req: Auth
  *       401:
  *         description: Invalid refresh token
  */
-router.post('/refresh', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 
   if (!refreshToken) {
@@ -243,7 +243,7 @@ router.post('/refresh', asyncHandler(async (req: AuthenticatedRequest, res: Resp
  *       401:
  *         description: Authentication required
  */
-router.post('/logout', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/logout', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
@@ -288,7 +288,7 @@ router.post('/logout', authenticateToken, asyncHandler(async (req: Authenticated
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/verify-email', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/verify-email', asyncHandler(async (req: Request, res: Response) => {
   const { token } = req.body;
 
   if (!token) {
@@ -333,7 +333,7 @@ router.post('/verify-email', asyncHandler(async (req: AuthenticatedRequest, res:
  */
 router.post('/resend-verification', validate([
   require('express-validator').body('email').isEmail().normalizeEmail(),
-]), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+]), asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   await authService.resendVerificationEmail(email);
@@ -368,7 +368,7 @@ router.post('/resend-verification', validate([
  *       400:
  *         description: Validation error
  */
-router.post('/forgot-password', validate(forgotPasswordValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/forgot-password', validate(forgotPasswordValidation()), asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
 
   await authService.forgotPassword(email);
@@ -406,7 +406,7 @@ router.post('/forgot-password', validate(forgotPasswordValidation()), asyncHandl
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password', validate(resetPasswordValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/reset-password', validate(resetPasswordValidation()), asyncHandler(async (req: Request, res: Response) => {
   const { token, password } = req.body;
 
   await authService.resetPassword(token, password);
@@ -448,7 +448,7 @@ router.post('/reset-password', validate(resetPasswordValidation()), asyncHandler
  *       400:
  *         description: Validation error
  */
-router.post('/change-password', authenticateToken, validate(changePasswordValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/change-password', authenticateToken, validate(changePasswordValidation()), asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
@@ -497,7 +497,7 @@ router.post('/change-password', authenticateToken, validate(changePasswordValida
  *       401:
  *         description: Authentication required
  */
-router.get('/me', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/me', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
@@ -529,7 +529,7 @@ router.get('/me', authenticateToken, asyncHandler(async (req: AuthenticatedReque
  *       401:
  *         description: Token is invalid or expired
  */
-router.get('/validate', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/validate', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
@@ -545,7 +545,7 @@ router.get('/validate', authenticateToken, asyncHandler(async (req: Authenticate
       userId: req.user.id,
       email: req.user.email,
       role: req.user.role,
-      isVerified: req.user.isVerified,
+      isVerified: req.user.is_verified,
     },
   });
 }));

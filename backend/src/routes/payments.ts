@@ -6,7 +6,7 @@
  */
 
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { Request } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,7 +24,7 @@ router.use(authenticateToken);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/subscriptions', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/subscriptions', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement get user subscriptions
   res.json({
     success: true,
@@ -39,7 +39,7 @@ router.get('/subscriptions', asyncHandler(async (req: AuthenticatedRequest, res:
  *     summary: Stripe webhook handler
  *     tags: [Payments]
  */
-router.post('/stripe/webhook', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/stripe/webhook', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement Stripe webhook handler
   res.json({
     success: true,

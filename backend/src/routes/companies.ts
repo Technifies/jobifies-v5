@@ -5,8 +5,7 @@
  *   description: Company management endpoints
  */
 
-import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken } from '../middleware/auth';
 
@@ -19,7 +18,7 @@ const router = Router();
  *     summary: Get all companies
  *     tags: [Companies]
  */
-router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement get all companies
   res.json({
     success: true,
@@ -36,7 +35,7 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
  *     security:
  *       - bearerAuth: []
  */
-router.post('/', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement company creation
   res.json({
     success: true,

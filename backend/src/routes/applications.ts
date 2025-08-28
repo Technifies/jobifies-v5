@@ -5,8 +5,7 @@
  *   description: Job application management endpoints
  */
 
-import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken } from '../middleware/auth';
 
@@ -24,7 +23,7 @@ router.use(authenticateToken);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement get user applications
   res.json({
     success: true,
@@ -41,7 +40,7 @@ router.get('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) =>
  *     security:
  *       - bearerAuth: []
  */
-router.post('/', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement job application
   res.json({
     success: true,

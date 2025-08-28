@@ -6,7 +6,7 @@
  */
 
 import { Router, Response } from 'express';
-import { AuthenticatedRequest, UserRole } from '../types';
+import { Request, UserRole } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
 
@@ -25,7 +25,7 @@ router.use(authorize(UserRole.ADMIN, UserRole.SUPER_ADMIN));
  *     security:
  *       - bearerAuth: []
  */
-router.get('/users', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/users', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement admin get all users
   res.json({
     success: true,
@@ -42,7 +42,7 @@ router.get('/users', asyncHandler(async (req: AuthenticatedRequest, res: Respons
  *     security:
  *       - bearerAuth: []
  */
-router.get('/stats', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/stats', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement admin stats
   res.json({
     success: true,

@@ -6,7 +6,7 @@
  */
 
 import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { Request } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { validate, updateProfileValidation } from '../middleware/validation';
@@ -25,7 +25,7 @@ router.use(authenticateToken);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/profile', asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/profile', asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement get user profile
   res.json({
     success: true,
@@ -43,7 +43,7 @@ router.get('/profile', asyncHandler(async (req: AuthenticatedRequest, res: Respo
  *     security:
  *       - bearerAuth: []
  */
-router.put('/profile', validate(updateProfileValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.put('/profile', validate(updateProfileValidation()), asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement update user profile
   res.json({
     success: true,

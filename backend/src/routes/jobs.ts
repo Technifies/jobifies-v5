@@ -5,8 +5,7 @@
  *   description: Job management endpoints
  */
 
-import { Router, Response } from 'express';
-import { AuthenticatedRequest } from '../types';
+import { Router, Request, Response } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken, optionalAuth } from '../middleware/auth';
 import { validate, createJobValidation, jobSearchValidation } from '../middleware/validation';
@@ -20,7 +19,7 @@ const router = Router();
  *     summary: Get all jobs with filtering and pagination
  *     tags: [Jobs]
  */
-router.get('/', optionalAuth, validate(jobSearchValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/', optionalAuth, validate(jobSearchValidation()), asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement job search with filters
   res.json({
     success: true,
@@ -38,7 +37,7 @@ router.get('/', optionalAuth, validate(jobSearchValidation()), asyncHandler(asyn
  *     security:
  *       - bearerAuth: []
  */
-router.post('/', authenticateToken, validate(createJobValidation()), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.post('/', authenticateToken, validate(createJobValidation()), asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement job creation
   res.json({
     success: true,
@@ -54,7 +53,7 @@ router.post('/', authenticateToken, validate(createJobValidation()), asyncHandle
  *     summary: Get job by ID
  *     tags: [Jobs]
  */
-router.get('/:id', optionalAuth, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+router.get('/:id', optionalAuth, asyncHandler(async (req: Request, res: Response) => {
   // TODO: Implement get job by ID
   res.json({
     success: true,

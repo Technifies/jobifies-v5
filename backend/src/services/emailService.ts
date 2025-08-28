@@ -9,7 +9,7 @@ export interface EmailTemplate {
 }
 
 export class EmailService {
-  private transporter: Transporter;
+  private transporter: Transporter | null = null;
   private isConfigured: boolean;
 
   constructor() {
@@ -23,7 +23,7 @@ export class EmailService {
         return false;
       }
 
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: config.email.smtp.host,
         port: config.email.smtp.port,
         secure: config.email.smtp.secure,

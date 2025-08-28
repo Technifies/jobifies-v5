@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { AuthenticatedRequest, JWTPayload, UserRole } from '../types';
+import { JWTPayload, UserRole } from '../types';
 import { AuthenticationError, AuthorizationError } from './errorHandler';
 import config from '../config';
 import logger from '../utils/logger';
 import { query } from '../config/database';
 
 // Extend Express Request type
-export interface AuthRequest extends AuthenticatedRequest {
+export interface AuthRequest extends Request {
   user: {
     id: string;
     email: string;
@@ -19,7 +19,7 @@ export interface AuthRequest extends AuthenticatedRequest {
 
 // Verify JWT token and attach user to request
 export const authenticateToken = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -99,7 +99,7 @@ export const authenticateToken = async (
 
 // Optional authentication - doesn't fail if no token
 export const optionalAuth = async (
-  req: AuthenticatedRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
