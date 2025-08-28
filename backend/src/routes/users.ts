@@ -5,8 +5,8 @@
  *   description: User management endpoints
  */
 
-import { Router, Response } from 'express';
-import { Request } from '../types';
+import { Router, Request, Response } from 'express';
+
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
 import { validate, updateProfileValidation } from '../middleware/validation';

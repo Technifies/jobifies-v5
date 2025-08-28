@@ -67,7 +67,7 @@ export class EmailService {
         text: text || this.htmlToText(html),
       };
 
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await this.transporter?.sendMail(mailOptions);
       
       logEmail('Email sent', to, subject, 'sent');
       logger.info('Email sent successfully', {
@@ -407,7 +407,7 @@ If you're having trouble, contact support at support@jobifies.com
     }
 
     try {
-      await this.transporter.verify();
+      await this.transporter?.verify();
       logger.info('Email service connection test successful');
       return true;
     } catch (error) {

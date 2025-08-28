@@ -20,12 +20,12 @@ export class AuthService {
       aud: 'jobifies-users',
     };
 
-    const accessToken = jwt.sign(payload, config.jwt.secret || 'fallback-secret', {
-      expiresIn: config.jwt.expiresIn || '24h',
+    const accessToken = jwt.sign(payload, config.jwt?.secret || process.env.JWT_SECRET || 'fallback-secret', {
+      expiresIn: config.jwt?.expiresIn || '24h',
     });
 
-    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret || 'fallback-refresh-secret', {
-      expiresIn: config.jwt.refreshExpiresIn || '7d',
+    const refreshToken = jwt.sign(payload, config.jwt?.refreshSecret || process.env.JWT_SECRET || 'fallback-refresh-secret', {
+      expiresIn: config.jwt?.refreshExpiresIn || '7d',
     });
 
     return { accessToken, refreshToken };

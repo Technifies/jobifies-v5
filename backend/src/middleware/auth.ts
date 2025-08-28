@@ -6,15 +6,9 @@ import config from '../config';
 import logger from '../utils/logger';
 import { query } from '../config/database';
 
-// Extend Express Request type
+// Extend Express Request type  
 export interface AuthRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    role: UserRole;
-    isVerified: boolean;
-    isActive: boolean;
-  };
+  user?: Express.User;
 }
 
 // Verify JWT token and attach user to request
@@ -69,7 +63,7 @@ export const authenticateToken = async (
       id: user.id,
       email: user.email,
       role: user.role as UserRole,
-      isVerified: user.is_verified,
+      is_verified: user.is_verified,
       isActive: user.is_active,
     };
 
@@ -126,7 +120,7 @@ export const optionalAuth = async (
         id: user.id,
         email: user.email,
         role: user.role as UserRole,
-        isVerified: user.is_verified,
+        is_verified: user.is_verified,
         isActive: user.is_active,
       };
     }

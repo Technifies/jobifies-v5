@@ -207,14 +207,14 @@ router.get('/ready', asyncHandler(async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Service is ready',
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     logger.error('Readiness check failed:', error);
-    res.status(503).json({
+    return res.status(503).json({
       success: false,
       message: 'Service not ready',
       error: error instanceof Error ? error.message : 'Unknown error',

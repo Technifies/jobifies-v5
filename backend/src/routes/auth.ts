@@ -176,7 +176,7 @@ router.post('/login', validate(loginValidation()), asyncHandler(async (req: Requ
     role: result.user.role,
   });
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Login successful',
     data: {
@@ -222,7 +222,7 @@ router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
 
   const tokens = await authService.refreshToken(refreshToken);
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Tokens refreshed successfully',
     data: { tokens },
@@ -259,7 +259,7 @@ router.post('/logout', authenticateToken, asyncHandler(async (req: Request, res:
     email: req.user.email,
   });
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Logout successful',
   });
@@ -301,7 +301,7 @@ router.post('/verify-email', asyncHandler(async (req: Request, res: Response) =>
 
   await authService.verifyEmail(token);
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Email verified successfully',
   });
@@ -338,7 +338,7 @@ router.post('/resend-verification', validate([
 
   await authService.resendVerificationEmail(email);
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Verification email sent successfully',
   });
@@ -373,7 +373,7 @@ router.post('/forgot-password', validate(forgotPasswordValidation()), asyncHandl
 
   await authService.forgotPassword(email);
 
-  res.json({
+  return res.json({
     success: true,
     message: 'If an account with that email exists, a password reset link has been sent.',
   });
@@ -411,7 +411,7 @@ router.post('/reset-password', validate(resetPasswordValidation()), asyncHandler
 
   await authService.resetPassword(token, password);
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Password reset successfully',
   });
@@ -466,7 +466,7 @@ router.post('/change-password', authenticateToken, validate(changePasswordValida
     email: req.user.email,
   });
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Password changed successfully',
   });
@@ -506,7 +506,7 @@ router.get('/me', authenticateToken, asyncHandler(async (req: Request, res: Resp
     });
   }
 
-  res.json({
+  return res.json({
     success: true,
     message: 'User information retrieved successfully',
     data: {
@@ -538,7 +538,7 @@ router.get('/validate', authenticateToken, asyncHandler(async (req: Request, res
     });
   }
 
-  res.json({
+  return res.json({
     success: true,
     message: 'Token is valid',
     data: {

@@ -5,8 +5,8 @@
  *   description: Administrative endpoints
  */
 
-import { Router, Response } from 'express';
-import { Request, UserRole } from '../types';
+import { Router, Request, Response } from 'express';
+import { UserRole } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
 import { authenticateToken, authorize } from '../middleware/auth';
 
