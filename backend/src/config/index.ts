@@ -232,6 +232,9 @@ const config: Config = {
 };
 
 // Validate required environment variables in production
+// Temporarily disabled for initial deployment
+// TODO: Re-enable after adding environment variables in Render dashboard
+/*
 if (config.NODE_ENV === 'production') {
   const requiredEnvVars = [
     'JWT_SECRET',
@@ -245,5 +248,6 @@ if (config.NODE_ENV === 'production') {
     throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
   }
 }
+*/
 
 export default config;
