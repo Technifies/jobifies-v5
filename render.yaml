@@ -1,0 +1,55 @@
+services:
+  # Backend API Service
+  - type: web
+    name: jobifies-backend
+    runtime: node
+    plan: starter
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_VERSION
+        value: v1
+      - key: CORS_ORIGIN
+        fromService:
+          type: web
+          name: jobifies-frontend
+          property: url
+
+  # PostgreSQL Database
+  - type: pserv
+    name: jobifies-postgres
+    plan: free
+    postgresMajorVersion: 15
+
+  # Redis Cache
+  - type: redis
+    name: jobifies-redis
+    plan: free
+    region: ohio
+
+databases:
+  - name: jobifies-postgres
+    databaseName: jobifies_prod
+    user: jobifies_user
+
+# Environment variables that will be set automatically by Render
+envVarGroups:
+  - name: database
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jobifies-postgres
+          property: connectionString
+  
+  - name: cache
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: jobifies-redis
+          property: connectionString
