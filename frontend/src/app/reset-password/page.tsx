@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Suspense } from 'react';
 import ResetPasswordForm from '@/components/auth/ResetPasswordForm';
 
 export const metadata: Metadata = {
@@ -49,7 +50,9 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md">
           {/* Reset Password Card */}
           <div className="bg-white shadow-lg rounded-2xl p-8 border border-neutral-100">
-            <ResetPasswordForm />
+            <Suspense fallback={<div className="text-center">Loading...</div>}>
+              <ResetPasswordForm />
+            </Suspense>
           </div>
 
           {/* Help Links */}

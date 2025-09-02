@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Suspense } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
 
 export const metadata: Metadata = {
@@ -49,7 +50,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Login Card */}
           <div className="bg-white shadow-lg rounded-2xl p-8 border border-neutral-100">
-            <LoginForm />
+            <Suspense fallback={<div className="text-center">Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </div>
 
           {/* Help Links */}

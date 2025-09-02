@@ -1,7 +1,7 @@
 [build]
   base = "frontend"
-  publish = "frontend/.next"
-  command = "npm install && npm install typescript @types/node --save-dev && npm run build"
+  publish = "frontend/out"
+  command = "npm install && npm run build && npm run export"
 
 [build.environment]
   NODE_VERSION = "18"
@@ -11,9 +11,6 @@
   from = "/*"
   to = "/index.html"
   status = 200
-
-[functions]
-  directory = "frontend/netlify/functions"
 
 [[headers]]
   for = "/*"
