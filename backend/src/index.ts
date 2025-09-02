@@ -7,9 +7,9 @@ import './config/passport'; // Initialize Passport strategies
 
 async function bootstrap() {
   try {
-    // Initialize database connections
-    logger.info('Initializing database connections...');
-    await initializeDatabase();
+    // Initialize database connections (temporarily disabled for deployment)
+    logger.info('Skipping database initialization for initial deployment...');
+    // await initializeDatabase();
     
     // Create Express application
     const app = new App();
