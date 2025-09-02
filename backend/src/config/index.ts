@@ -236,8 +236,7 @@ if (config.NODE_ENV === 'production') {
   const requiredEnvVars = [
     'JWT_SECRET',
     'JWT_REFRESH_SECRET',
-    'SESSION_SECRET',
-    'DB_PASSWORD'
+    'SESSION_SECRET'
   ];
 
   const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
