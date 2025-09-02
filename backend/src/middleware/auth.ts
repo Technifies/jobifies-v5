@@ -58,13 +58,18 @@ export const authenticateToken = async (
       throw new AuthenticationError('User account is deactivated');
     }
 
+    // Check if user is verified
+    if (!user.is_verified) {
+      throw new AuthenticationError('Email not verified');
+    }
+
     // Attach user to request
     req.user = {
       id: user.id,
       email: user.email,
       role: user.role as UserRole,
       is_verified: user.is_verified,
-      isActive: user.is_active,
+      is_active: user.is_active,
     };
 
     // Log successful authentication
@@ -121,7 +126,7 @@ export const optionalAuth = async (
         email: user.email,
         role: user.role as UserRole,
         is_verified: user.is_verified,
-        isActive: user.is_active,
+        is_active: user.is_active,
       };
     }
 
@@ -139,7 +144,7 @@ export const authorize = (...roles: UserRole[]) => {
       return next(new AuthenticationError('Authentication required'));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role as UserRole)) {
       logger.warn('Authorization failed', {
         userId: req.user.id,
         userRole: req.user.role,
@@ -169,7 +174,7 @@ export const requireVerified = (
     return next(new AuthenticationError('Authentication required'));
   }
 
-  if (!req.user.isVerified) {
+  if (!req.user.is_verified) {
     return next(
       new AuthorizationError('Email verification required to access this resource')
     );

@@ -22,7 +22,10 @@
       "Bash(git remote add:*)",
       "Bash(git branch:*)",
       "Bash(git push:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:dashboard.render.com)",
+      "WebFetch(domain:render.com)"
     ],
     "deny": [],
     "ask": []
