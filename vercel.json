@@ -1,28 +1,9 @@
 {
-  "version": 2,
   "name": "jobifies-frontend",
-  "builds": [
+  "rewrites": [
     {
-      "src": "frontend/package.json",
-      "use": "@vercel/next",
-      "config": {
-        "projectSettings": {
-          "outputDirectory": "frontend"
-        }
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "https://jobifies-v5-backend.onrender.com/api/v1/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend/$1"
+      "source": "/api/(.*)",
+      "destination": "https://jobifies-v5-backend.onrender.com/api/v1/$1"
     }
   ],
   "env": {
