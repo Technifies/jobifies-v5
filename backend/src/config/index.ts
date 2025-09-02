@@ -231,23 +231,8 @@ const config: Config = {
   },
 };
 
-// Validate required environment variables in production
-// Temporarily disabled for initial deployment
-// TODO: Re-enable after adding environment variables in Render dashboard
-/*
-if (config.NODE_ENV === 'production') {
-  const requiredEnvVars = [
-    'JWT_SECRET',
-    'JWT_REFRESH_SECRET',
-    'SESSION_SECRET'
-  ];
-
-  const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-  
-  if (missingVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
-  }
-}
-*/
+// Environment variable validation temporarily disabled for deployment
+// Will be re-enabled after successful deployment
+console.log('⚠️ Environment variable validation is disabled for initial deployment');
 
 export default config;
