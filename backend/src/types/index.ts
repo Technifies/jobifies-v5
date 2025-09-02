@@ -406,4 +406,37 @@ export interface SystemConfig {
   updated_at: Date;
 }
 
+// Additional Job Filtering Types
+export interface JobFilters {
+  search?: string;
+  jobType?: string[];
+  employmentType?: string[];
+  experienceLevel?: string[];
+  location?: string;
+  companyId?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  skills?: string[];
+  remote?: boolean;
+}
+
+export interface JobSearchParams {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+}
+
+export interface PaginationResult<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
 export default {};

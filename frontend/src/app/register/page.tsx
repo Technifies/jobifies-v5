@@ -1,7 +1,12 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Suspense } from 'react';
 import RegisterForm from '@/components/auth/RegisterForm';
+
+function RegisterFormWrapper() {
+  return <RegisterForm />;
+}
 
 export const metadata: Metadata = {
   title: 'Create Account - Jobifies',
@@ -61,23 +66,10 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* Temporary message */}
-            <div className="text-center p-6 bg-info-50 rounded-lg border border-info-200">
-              <p className="text-info-800 font-medium mb-2">Registration Coming Soon</p>
-              <p className="text-info-600 text-sm">
-                This feature is currently under development. Please check back later.
-              </p>
-            </div>
-
-            {/* Back to Login */}
-            <div className="mt-6 text-center">
-              <Link
-                href="/login"
-                className="text-sm text-primary-600 hover:text-primary-500 transition-colors focus:outline-none focus:underline"
-              >
-                Already have an account? Sign in
-              </Link>
-            </div>
+            {/* Register Form */}
+            <Suspense fallback={<div>Loading...</div>}>
+              <RegisterFormWrapper />
+            </Suspense>
           </div>
 
           {/* Benefits Section */}
