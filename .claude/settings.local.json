@@ -25,7 +25,10 @@
       "Bash(sed:*)",
       "Bash(node:*)",
       "WebFetch(domain:dashboard.render.com)",
-      "WebFetch(domain:render.com)"
+      "WebFetch(domain:render.com)",
+      "Bash(npm run install:all:*)",
+      "Bash(npm run migrate:*)",
+      "Bash(npm:*)"
     ],
     "deny": [],
     "ask": []

@@ -102,8 +102,9 @@ class App {
     const speedLimiter = slowDown({
       windowMs: config.rateLimit.windowMs,
       delayAfter: Math.floor(config.rateLimit.maxRequests * 0.5),
-      delayMs: 100,
+      delayMs: () => 100,
       maxDelayMs: 10000,
+      validate: { delayMs: false }
     });
 
     this.app.use('/api', limiter);

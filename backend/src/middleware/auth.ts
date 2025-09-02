@@ -197,7 +197,7 @@ export const checkOwnership = (resourceUserIdField: string = 'user_id') => {
       }
 
       // Admin and super admin can access any resource
-      if ([UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role)) {
+      if ([UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole)) {
         return next();
       }
 
@@ -305,7 +305,7 @@ export const requireSubscription = (requiredPlans: string[]) => {
       }
 
       // Admin users bypass subscription checks
-      if ([UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role)) {
+      if ([UserRole.ADMIN, UserRole.SUPER_ADMIN].includes(req.user.role as UserRole)) {
         return next();
       }
 
