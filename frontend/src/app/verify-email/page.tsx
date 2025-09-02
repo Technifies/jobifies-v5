@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Suspense } from 'react';
 import EmailVerificationForm from '@/components/auth/EmailVerificationForm';
 
 export const metadata: Metadata = {
@@ -8,6 +9,10 @@ export const metadata: Metadata = {
   description: 'Verify your email address to complete your Jobifies account setup and access all features.',
   keywords: 'email verification, verify email, jobifies, account activation',
 };
+
+function EmailVerificationWrapper() {
+  return <EmailVerificationForm />;
+}
 
 export default function VerifyEmailPage() {
   return (
@@ -49,7 +54,9 @@ export default function VerifyEmailPage() {
         <div className="w-full max-w-md">
           {/* Email Verification Card */}
           <div className="bg-white shadow-lg rounded-2xl p-8 border border-neutral-100">
-            <EmailVerificationForm />
+            <Suspense fallback={<div>Loading...</div>}>
+              <EmailVerificationWrapper />
+            </Suspense>
           </div>
 
           {/* Help Section */}

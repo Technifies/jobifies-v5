@@ -1,11 +1,19 @@
 [build]
   base = "frontend"
   publish = "frontend/out"
-  command = "npm install && npm run build && npm run export"
+  command = "npm install && npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "8"
+  NEXT_PUBLIC_API_URL = "https://jobifies-backend.onrender.com/api/v1"
+  NEXT_PUBLIC_ENV = "production"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://jobifies-backend.onrender.com/api/v1/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"

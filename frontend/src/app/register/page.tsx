@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   keywords: 'register, sign up, create account, jobifies, jobs, career, job seeker, recruiter',
 };
 
+// Enable static generation for Netlify export
+// export const dynamic = 'force-dynamic';
+
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-neutral-50 flex flex-col">
@@ -49,7 +52,32 @@ export default function RegisterPage() {
         <div className="w-full max-w-lg">
           {/* Register Card */}
           <div className="bg-white shadow-lg rounded-2xl p-8 border border-neutral-100">
-            <RegisterForm />
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-neutral-900">
+                Create your account
+              </h2>
+              <p className="mt-2 text-neutral-600">
+                Join Jobifies to discover amazing career opportunities.
+              </p>
+            </div>
+
+            {/* Temporary message */}
+            <div className="text-center p-6 bg-info-50 rounded-lg border border-info-200">
+              <p className="text-info-800 font-medium mb-2">Registration Coming Soon</p>
+              <p className="text-info-600 text-sm">
+                This feature is currently under development. Please check back later.
+              </p>
+            </div>
+
+            {/* Back to Login */}
+            <div className="mt-6 text-center">
+              <Link
+                href="/login"
+                className="text-sm text-primary-600 hover:text-primary-500 transition-colors focus:outline-none focus:underline"
+              >
+                Already have an account? Sign in
+              </Link>
+            </div>
           </div>
 
           {/* Benefits Section */}

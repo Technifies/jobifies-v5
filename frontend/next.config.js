@@ -1,7 +1,13 @@
 const nextConfig = {
+  // Output configuration for Netlify
+  trailingSlash: true,
+  output: 'export',
+  distDir: 'out',
+  
   // Image optimization
   images: {
-    domains: ['jobifies-portal.vercel.app'],
+    unoptimized: true, // Required for static export
+    domains: ['jobifies-portal.netlify.app', 'jobifies-backend.onrender.com'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp', 'image/avif'],
@@ -21,6 +27,12 @@ const nextConfig = {
   // ESLint configuration - ignore during builds
   eslint: {
     ignoreDuringBuilds: true,
+  },
+
+  // Environment variables
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://jobifies-backend.onrender.com/api/v1',
+    NEXT_PUBLIC_ENV: process.env.NEXT_PUBLIC_ENV || 'production',
   },
 
 
@@ -48,32 +60,33 @@ const nextConfig = {
     return config;
   },
 
+  // Remove headers for static export
   // Security headers for production
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on',
-          },
-        ],
-      },
-    ];
-  },
+  // async headers() {
+  //   return [
+  //     {
+  //       source: '/(.*)',
+  //       headers: [
+  //         {
+  //           key: 'X-Frame-Options',
+  //           value: 'DENY',
+  //         },
+  //         {
+  //           key: 'X-Content-Type-Options',
+  //           value: 'nosniff',
+  //         },
+  //         {
+  //           key: 'Referrer-Policy',
+  //           value: 'strict-origin-when-cross-origin',
+  //         },
+  //         {
+  //           key: 'X-DNS-Prefetch-Control',
+  //           value: 'on',
+  //         },
+  //       ],
+  //     },
+  //   ];
+  // },
 };
 
 module.exports = nextConfig;
